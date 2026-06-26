@@ -4,11 +4,6 @@ using Sena_app.Models;
 
 namespace Sena_app.Services
 {
-    /// <summary>
-    /// Servicio de tareas conectado a SQL Server via EF Core.
-    /// Sincroniza automáticamente con Google Calendar cuando el usuario
-    /// tiene la cuenta conectada.
-    /// </summary>
     public class TaskService
     {
         private readonly IDbContextFactory<AppDbContext> _factory;

@@ -1,12 +1,8 @@
 ﻿namespace Sena_app.Models
 {
-    /// <summary>
-    /// Representa un usuario de la aplicación Taskly.
-    /// Mapeado a la tabla [User] en SQL Server.
-    /// </summary>
     public class User
     {
-        public int Id { get; set; }   // id_user
+        public int Id { get; set; } 
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
@@ -27,10 +23,6 @@
             $"{(FirstName.Length > 0 ? FirstName[0] : ' ')}" +
             $"{(LastName.Length > 0 ? LastName[0] : ' ')}".ToUpper();
 
-        /// <summary>
-        /// Plan se mantiene para no romper el front.
-        /// Siempre retorna "Free" hasta que se implemente la lógica de planes.
-        /// </summary>
         public string Plan => "Free";
 
         // ── Navegación EF Core ───────────────────────────────────────────────

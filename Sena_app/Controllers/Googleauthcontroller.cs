@@ -30,7 +30,7 @@ namespace Sena_app.Controllers
             if (!string.IsNullOrEmpty(error))
                 return Redirect($"/profile?calendarError={error}");
 
-            // Si state == "signin" → es un Sign-In, no Calendar
+            // Si state == "signin" → es un Sign-In, no Calendar, esto es para iniciar sesión con Google usando las mismas credenciales de OAuth
             if (state == "signin")
                 return await HandleSignIn(code);
 

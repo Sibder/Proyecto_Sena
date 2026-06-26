@@ -5,10 +5,6 @@ using Sena_app.Models;
 
 namespace Sena_app.Services
 {
-    /// <summary>
-    /// Servicio de autenticación con sesión persistente via ProtectedSessionStorage.
-    /// Al recargar la página, restaura el usuario desde la BD usando el id guardado.
-    /// </summary>
     public class AuthService
     {
         private readonly IDbContextFactory<AppDbContext> _factory;
@@ -38,11 +34,7 @@ namespace Sena_app.Services
         }
 
         // ── Restaurar sesión al iniciar el circuito ───────────────────────────
-        /// <summary>
-        /// Llamar desde OnAfterRenderAsync(firstRender) en AppLayout y Login.
-        /// No puede llamarse desde OnInitialized porque el storage
-        /// requiere que el circuito JS esté activo.
-        /// </summary>
+
         public async Task RestoreSessionAsync()
         {
             if (CurrentUser != null) return;
@@ -57,7 +49,6 @@ namespace Sena_app.Services
             }
             catch
             {
-                // Storage no disponible aún o datos corruptos — ignorar
             }
         }
 

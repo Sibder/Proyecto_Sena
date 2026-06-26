@@ -138,7 +138,6 @@
 @code {
     string categoriaSeleccionada = "";
 
-    // Lista materializada — se recalcula solo cuando cambia el filtro
     List<TaskItem> tareasFiltradas = new();
 
     int total       => TaskService.CountTotal(AuthService.CurrentUser?.Id ?? 0);

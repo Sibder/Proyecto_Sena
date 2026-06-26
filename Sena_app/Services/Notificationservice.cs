@@ -1,10 +1,5 @@
 ﻿namespace Sena_app.Services
 {
-    /// <summary>
-    /// Servicio Singleton que actúa como puente entre el ReminderBackgroundService
-    /// y los componentes Blazor. Cuando el background detecta un recordatorio,
-    /// dispara el evento OnNotification y el AppLayout lo muestra en pantalla.
-    /// </summary>
     public class NotificationService
     {
         // Evento al que se suscriben los componentes

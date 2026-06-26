@@ -4,10 +4,6 @@ using Sena_app.Models;
 
 namespace Sena_app.Services
 {
-    /// <summary>
-    /// Servicio de recordatorios conectado a SQL Server via EF Core.
-    /// Gestiona el CRUD de Reminder asociados 1:1 a una tarea.
-    /// </summary>
     public class ReminderService
     {
         private readonly IDbContextFactory<AppDbContext> _factory;
@@ -39,10 +35,6 @@ namespace Sena_app.Services
         }
 
         // ── Crear o actualizar recordatorio de una tarea ──────────────────────
-        /// <summary>
-        /// Si la tarea ya tiene recordatorio lo actualiza,
-        /// si no tiene lo crea. Nunca deja dos recordatorios por tarea.
-        /// </summary>
         public void Save(Reminder reminder)
         {
             using var db = _factory.CreateDbContext();
