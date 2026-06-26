@@ -1,0 +1,702 @@
+@page "/home"
+@layout Sena_app.Components.Layout.MainLayout
+@using Sena_app.Services
+@using Sena_app.Models
+@inject AuthService AuthService
+@inject TaskService TaskService
+@inject NavigationManager Navigation
+@inject ReminderService ReminderService
+
+<PageTitle>Panel de Tareas</PageTitle>
+
+<div class="app">
+
+    <!-- ═══════════ SIDEBAR ═══════════ -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <span class="dot"></span>
+            GESTOR DE TAREAS
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-label">General</div>
+            <div class="nav-item active">
+                <span class="icon">▦</span> Panel de tareas
+                <span class="nav-badge">@TaskService.CountPending(AuthService.CurrentUser?.Id ?? 0)</span>
+            </div>
+            <div class="nav-item" @onclick='() => Navigation.NavigateTo("/calendario")'>
+                <span class="icon">◫</span> Calendario
+            </div>
+            <div class="nav-item" @onclick='() => Navigation.NavigateTo("/estadisticas")'>
+                <span class="icon">◎</span> Estadísticas
+            </div>
+            <div class="nav-item" @onclick='() => Navigation.NavigateTo("/notificaciones")'>
+                <span class="icon">◈</span> Notificaciones
+                @{
+                    var alertasSidebar = TaskService
+                        .GetByUser(AuthService.CurrentUser?.Id ?? 0)
+                        .Count(t => t.IsOverdue || t.IsDueToday);
+                }
+                @if (alertasSidebar > 0)
+                {
+                    <span class="nav-badge" style="background:rgba(255,95,87,.15);color:#ff5f57;border-color:rgba(255,95,87,.3);">
+                        @alertasSidebar
+                    </span>
+                }
+            </div>
+        </div>
+
+        <!-- Categorías con filtro -->
+        <div class="nav-section">
+            <div class="nav-label">Categorías</div>
+            <div class="nav-item @(activeFilter == "cat-work" ? "active" : "")" @onclick='() => activeFilter = "cat-work"'>
+                <span class="cat-dot" style="background:#4ea8ff"></span> Trabajo
+                <span class="nav-badge">@TaskService.GetByUser(AuthService.CurrentUser?.Id ?? 0).Count(t => t.Category == TaskCategory.Work)</span>
+            </div>
+            <div class="nav-item @(activeFilter == "cat-study" ? "active" : "")" @onclick='() => activeFilter = "cat-study"'>
+                <span class="cat-dot" style="background:#b18cff"></span> Estudio
+                <span class="nav-badge">@TaskService.GetByUser(AuthService.CurrentUser?.Id ?? 0).Count(t => t.Category == TaskCategory.Study)</span>
+            </div>
+            <div class="nav-item @(activeFilter == "cat-home" ? "active" : "")" @onclick='() => activeFilter = "cat-home"'>
+                <span class="cat-dot" style="background:#3dd9c2"></span> Hogar
+                <span class="nav-badge">@TaskService.GetByUser(AuthService.CurrentUser?.Id ?? 0).Count(t => t.Category == TaskCategory.Home)</span>
+            </div>
+            <div class="nav-item @(activeFilter == "cat-health" ? "active" : "")" @onclick='() => activeFilter = "cat-health"'>
+                <span class="cat-dot" style="background:#ff5f57"></span> Salud
+                <span class="nav-badge">@TaskService.GetByUser(AuthService.CurrentUser?.Id ?? 0).Count(t => t.Category == TaskCategory.Health)</span>
+            </div>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="nav-item" style="margin-bottom:8px;"><span class="icon">⚙</span> Configuración</div>
+            <div class="user-card" @onclick='() => Navigation.NavigateTo("/profile")'>
+                <div class="user-av">@AuthService.CurrentUser?.Initials</div>
+                <div class="user-info">
+                    <div class="user-name">@AuthService.CurrentUser?.FullName</div>
+                    <div class="user-plan">Plan @AuthService.CurrentUser?.Plan</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ═══════════ MAIN ═══════════ -->
+    <main class="main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <h1>Panel de Tareas</h1>
+                <p>@DateTime.Now.ToString("dddd, d 'de' MMMM", new System.Globalization.CultureInfo("es-CO")) — @TaskService.CountPending(AuthService.CurrentUser?.Id ?? 0) tareas pendientes</p>
+            </div>
+            <div class="topbar-right">
+                <button class="btn btn-primary" @onclick="AbrirFormularioNuevo"><span>+</span> Nueva tarea</button>
+            </div>
+        </div>
+
+        <!-- MODAL CREAR / EDITAR TAREA -->
+        @if (mostrarFormulario)
+        {
+            <div class="modal-overlay" @onclick="CerrarFormulario">
+                <div class="modal-card" @onclick:stopPropagation="true">
+
+                    <div class="modal-header">
+                        <h2>@(tareaEditando == null ? "Nueva tarea" : "Editar tarea")</h2>
+                        <button class="modal-close" @onclick="CerrarFormulario">✕</button>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorTarea))
+                    {
+                        <div class="modal-error">⚠️ @errorTarea</div>
+                    }
+
+                    <!-- Título -->
+                    <div class="mfield">
+                        <label>Título <span class="req">*</span></label>
+                        <input type="text" placeholder="Ej: Entregar informe de ventas" @bind="titulo" @bind:event="oninput" />
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="mfield">
+                        <label>Descripción</label>
+                        <textarea placeholder="Detalles opcionales de la tarea..." @bind="descripcion" @bind:event="oninput" rows="3"></textarea>
+                    </div>
+
+                    <!-- Fecha límite -->
+                    <div class="mfield">
+                        <label>Fecha límite <span class="req">*</span></label>
+                        <input type="date" @bind="fechaLimite" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+
+                    <!-- Hora límite -->
+                    <div class="mfield">
+                        <label>Hora límite</label>
+                            <input type="time" @bind="horaLimite" />
+                            </div>
+
+                    <!-- Prioridad y Categoría en fila -->
+                    <div class="mrow">
+                        <div class="mfield">
+                            <label>Prioridad</label>
+                            <select @bind="prioridad">
+                                <option value="Low">🟢 Baja</option>
+                                <option value="Medium">🟡 Media</option>
+                                <option value="High">🔴 Alta</option>
+                            </select>
+                        </div>
+                        <div class="mfield">
+                            <label>Categoría</label>
+                            <select @bind="categoria">
+                                <option value="Work">💼 Trabajo</option>
+                                <option value="Study">📚 Estudio</option>
+                                <option value="Home">🏠 Hogar</option>
+                                <option value="Health">❤️ Salud</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Recordatorio -->
+                    <div class="mfield">
+                        <label>
+                            <input type="checkbox" @bind="agregarRecordatorio" style="margin-right:6px;" />
+                            Agregar recordatorio
+                        </label>
+                    </div>
+
+                    @if (agregarRecordatorio)
+                    {
+                        <div class="mrow">
+                            <div class="mfield">
+                                <label>Fecha de aviso</label>
+                                <input type="date" @bind="recordatorioFecha" />
+                            </div>
+                            <div class="mfield">
+                                <label>Hora de aviso</label>
+                                <input type="time" @bind="recordatorioHora" />
+                            </div>
+                        </div>
+                        <div class="mrow">
+                            <div class="mfield">
+                                <label>Tipo</label>
+                                <select @bind="recordatorioTipo">
+                                    <option value="Email">📧 Correo</option>
+                                    <option value="Push">🔔 Push</option>
+                                    <option value="Both">📧🔔 Ambos</option>
+                                </select>
+                            </div>
+                            <div class="mfield">
+                                <label>Frecuencia</label>
+                                <select @bind="recordatorioFrecuencia">
+                                    <option value="Once">Una vez</option>
+                                    <option value="Daily">Diaria</option>
+                                    <option value="Weekly">Semanal</option>
+                                </select>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="modal-actions">
+                        <button class="btn-cancel" @onclick="CerrarFormulario">Cancelar</button>
+                        <button class="btn-save" @onclick="GuardarTarea">
+                            @(tareaEditando == null ? "Crear tarea" : "Guardar cambios")
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        }
+
+        <!-- FILTERS Y BÚSQUEDA -->
+        <div class="filters">
+            <button class="filter-tab @(activeFilter == "all" ? "active" : "")" @onclick='() => activeFilter = "all"'>Todas</button>
+            <button class="filter-tab @(activeFilter == "pending" ? "active" : "")" @onclick='() => activeFilter = "pending"'>Pendientes</button>
+            <button class="filter-tab @(activeFilter == "done" ? "active" : "")" @onclick='() => activeFilter = "done"'>Completadas</button>
+            <button class="filter-tab @(activeFilter == "overdue" ? "active" : "")" @onclick='() => activeFilter = "overdue"'>Vencidas</button>
+            <div class="filter-sep"></div>
+            <button class="filter-tab @(activeFilter == "high" ? "active" : "")" @onclick='() => activeFilter = "high"'>🔴 Alta</button>
+            <button class="filter-tab @(activeFilter == "medium" ? "active" : "")" @onclick='() => activeFilter = "medium"'>🟡 Media</button>
+            <button class="filter-tab @(activeFilter == "low" ? "active" : "")" @onclick='() => activeFilter = "low"'>🟢 Baja</button>
+            <div class="search-box">
+                <span style="color:#6b6b72;font-size:13px;">⌕</span>
+                <input type="text" placeholder="Buscar por nombre, categoría o fecha..." @bind="searchQuery" @bind:event="oninput" />
+            </div>
+        </div>
+
+        <!-- LISTA DE TAREAS -->
+        <div class="task-list">
+            @{
+                var tasks = TaskService.GetByUser(AuthService.CurrentUser?.Id ?? 0)
+                  .Where(t =>
+                    (activeFilter == "all") ||
+                    (activeFilter == "pending" && !t.IsDone) ||
+                    (activeFilter == "done" && t.IsDone) ||
+                    (activeFilter == "overdue" && t.IsOverdue) ||
+                    (activeFilter == "high" && t.Priority == TaskPriority.High) ||
+                    (activeFilter == "medium" && t.Priority == TaskPriority.Medium) ||
+                    (activeFilter == "low" && t.Priority == TaskPriority.Low) ||
+                    (activeFilter == "cat-work" && t.Category == TaskCategory.Work) ||
+                    (activeFilter == "cat-study" && t.Category == TaskCategory.Study) ||
+                    (activeFilter == "cat-home" && t.Category == TaskCategory.Home) ||
+                    (activeFilter == "cat-health" && t.Category == TaskCategory.Health))
+                  .Where(t => string.IsNullOrEmpty(searchQuery) ||
+                    t.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    t.Description.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    GetCategoryName(t.Category).Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    t.DueDate.ToString("dd/MM/yyyy").Contains(searchQuery) ||
+                    t.DueDate.ToString("d MMM", new System.Globalization.CultureInfo("es-CO")).Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+                  .ToList();
+
+                var todayTasks = tasks.Where(t => t.DueDate.Date == DateTime.Today).ToList();
+                var tomorrowTasks = tasks.Where(t => t.DueDate.Date == DateTime.Today.AddDays(1)).ToList();
+                var laterTasks = tasks.Where(t => t.DueDate.Date > DateTime.Today.AddDays(1)).ToList();
+                var overdueTasks = tasks.Where(t => t.DueDate.Date < DateTime.Today && !t.IsDone).ToList();
+                var doneTasks = tasks.Where(t => t.IsDone).ToList();
+            }
+
+            @* Vencidas *@
+            @if (overdueTasks.Any())
+            {
+                <div class="group-header">
+                    <span class="group-title" style="color:#ff5f57">⏰ Vencidas</span>
+                    <div class="group-line"></div>
+                </div>
+                @foreach (var task in overdueTasks)
+                {
+                    @TaskCard(task)
+                }
+            }
+
+            @* Hoy *@
+            @if (todayTasks.Any())
+            {
+                <div class="group-header">
+                    <span class="group-title">📅 Hoy</span>
+                    <div class="group-line"></div>
+                </div>
+                @foreach (var task in todayTasks)
+                {
+                    @TaskCard(task)
+                }
+            }
+
+            @* Mañana *@
+            @if (tomorrowTasks.Any())
+            {
+                <div class="group-header">
+                    <span class="group-title">Mañana</span>
+                    <div class="group-line"></div>
+                </div>
+                @foreach (var task in tomorrowTasks)
+                {
+                    @TaskCard(task)
+                }
+            }
+
+            @* Más adelante *@
+            @if (laterTasks.Any())
+            {
+                <div class="group-header">
+                    <span class="group-title">Más adelante</span>
+                    <div class="group-line"></div>
+                </div>
+                @foreach (var task in laterTasks)
+                {
+                    @TaskCard(task)
+                }
+            }
+
+            @* Completadas *@
+            @if (doneTasks.Any())
+            {
+                <div class="group-header">
+                    <span class="group-title" style="color:#3dd9c2">✓ Completadas</span>
+                    <div class="group-line"></div>
+                </div>
+                @foreach (var task in doneTasks)
+                {
+                    @TaskCard(task)
+                }
+            }
+
+            @if (!tasks.Any())
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">✓</div>
+                    <div class="empty-title">No hay tareas</div>
+                    <div class="empty-sub">Crea una nueva tarea con el botón "+ Nueva tarea"</div>
+                </div>
+            }
+        </div>
+    </main>
+
+    <!-- ═══════════ RIGHT PANEL ═══════════ -->
+    <aside class="right-panel">
+
+        <!-- MINI CALENDARIO -->
+        <div class="panel-section">
+            <div class="panel-title">
+                Calendario
+                <span class="panel-title-link">Ver completo →</span>
+            </div>
+            <div class="mini-cal">
+                <div class="cal-header">
+                    <span class="cal-month">@DateTime.Now.ToString("MMMM yyyy", new System.Globalization.CultureInfo("es-CO"))</span>
+                    <div class="cal-nav"><button>‹</button><button>›</button></div>
+                </div>
+                <div class="cal-grid">
+                    <div class="cal-day-name">L</div><div class="cal-day-name">M</div>
+                    <div class="cal-day-name">X</div><div class="cal-day-name">J</div>
+                    <div class="cal-day-name">V</div><div class="cal-day-name">S</div>
+                    <div class="cal-day-name">D</div>
+                    @foreach (var day in GetCalendarDays())
+                    {
+                        <div class="cal-day @day.Classes" @onclick="() => selectedDay = day.Day">@day.Day</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- ESTADÍSTICAS -->
+        <div class="panel-section">
+            <div class="panel-title">Esta semana <span class="panel-title-link">Ver más →</span></div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-val">@TaskService.CountPending(AuthService.CurrentUser?.Id ?? 0)</div>
+                    <div class="stat-lbl">Pendientes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-val" style="color:#3949ab">@TaskService.CountDone(AuthService.CurrentUser?.Id ?? 0)</div>
+                    <div class="stat-lbl">Completadas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-val" style="color:#ff5f57">@TaskService.GetByUser(AuthService.CurrentUser?.Id ?? 0).Count(t => t.IsOverdue)</div>
+                    <div class="stat-lbl">Vencidas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-val" style="color:#4ea8ff">@TaskService.CountTotal(AuthService.CurrentUser?.Id ?? 0)</div>
+                    <div class="stat-lbl">Total</div>
+                </div>
+            </div>
+            @{
+                var total = TaskService.CountTotal(AuthService.CurrentUser?.Id ?? 0);
+                var done = TaskService.CountDone(AuthService.CurrentUser?.Id ?? 0);
+                var pct = total > 0 ? (done * 100 / total) : 0;
+            }
+            <div class="progress-wrap">
+                <div class="progress-label"><span>Progreso</span><span style="color:#3949ab">@pct%</span></div>
+                <div class="progress-track"><div class="progress-fill" style="width:@pct%"></div></div>
+            </div>
+        </div>
+
+        <!-- PRÓXIMAS TAREAS -->
+        <div class="panel-section">
+            <div class="panel-title">Próximas tareas</div>
+            <div class="upcoming-list">
+                @foreach (var task in TaskService.GetByUser(AuthService.CurrentUser?.Id ?? 0).Where(t => !t.IsDone).Take(4))
+                {
+                    <div class="upcoming-item">
+                        <div class="upcoming-dot" style="background:@GetPriorityColor(task.Priority)"></div>
+                        <div class="upcoming-body">
+                            <div class="upcoming-title">@task.Title</div>
+                            <div class="upcoming-when">@GetRelativeDate(task.DueDate)</div>
+                        </div>
+                        <div class="upcoming-time">@task.DueDate.ToString("d MMM", new System.Globalization.CultureInfo("es-CO"))</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+    </aside>
+    <Notifpopup />
+</div>
+
+<!-- Confirmación de eliminación -->
+@if (tareaAEliminar != null)
+{
+    <div class="modal-overlay" @onclick="CancelarEliminar">
+        <div class="confirm-card" @onclick:stopPropagation="true">
+            <div class="confirm-icon">🗑️</div>
+            <h3>¿Eliminar tarea?</h3>
+            <p>"@tareaAEliminar.Title"</p>
+            <div class="confirm-actions">
+                <button class="btn-cancel" @onclick="CancelarEliminar">Cancelar</button>
+                <button class="btn-delete" @onclick="ConfirmarEliminar">Sí, eliminar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@* Componente de tarjeta de tarea reutilizable *@
+@code {
+
+    RenderFragment TaskCard(TaskItem task) =>
+    @<div class="task-card @(task.IsDone ? "done" : "")" style="--priority-color: @GetPriorityColor(task.Priority)">
+
+        @* Checkbox completar *@
+        <div class="task-check @(task.IsDone ? "checked" : "")" @onclick="() => ToggleTask(task.Id)" title="@(task.IsDone ? "Marcar pendiente" : "Marcar completada")"></div>
+
+        @* Cuerpo *@
+        <div class="task-body">
+            <div class="task-title">@task.Title</div>
+            @if (!string.IsNullOrEmpty(task.Description))
+            {
+                <div class="task-desc">@task.Description</div>
+            }
+            <div class="task-meta">
+                <span class="tag @GetCategoryClass(task.Category)">@GetCategoryName(task.Category)</span>
+                <span class="task-date @(task.IsOverdue && !task.IsDone ? "overdue" : task.IsDueToday && !task.IsDone ? "today" : "")">
+                    @(task.IsDone ? "✓ Completada" : task.IsOverdue ? "⏰ Vencida" : task.IsDueToday ? "📅 Hoy" : "📅 " + task.DueDate.ToString("d MMM", new System.Globalization.CultureInfo("es-CO")))
+                </span>
+            </div>
+        </div>
+
+        @* Acciones: editar y eliminar *@
+        <div class="task-actions">
+            <button class="action-btn edit-btn" @onclick="() => AbrirFormularioEditar(task)" title="Editar">✏️</button>
+            <button class="action-btn delete-btn" @onclick="() => PedirConfirmacionEliminar(task)" title="Eliminar">🗑️</button>
+        </div>
+
+        <div class="priority-badge" style="background:@GetPriorityColor(task.Priority)"></div>
+    </div>;
+
+}
+
+
+@code {
+    // ── Vista ────────────────────────────────────────────────────────────
+    private string activeFilter = "all";
+    private string searchQuery = string.Empty;
+    private int selectedDay = DateTime.Today.Day;
+
+    // ── Formulario crear/editar ──────────────────────────────────────────
+    private bool mostrarFormulario = false;
+    private TaskItem? tareaEditando = null;
+    private string titulo = string.Empty;
+    private string descripcion = string.Empty;
+    private DateTime fechaLimite = DateTime.Today;
+    private TaskPriority prioridad = TaskPriority.Medium;
+    private TaskCategory categoria = TaskCategory.Work;
+    private string errorTarea = string.Empty;
+    private TimeOnly horaLimite = new TimeOnly(9, 0, 0);
+
+    // ── Eliminar ─────────────────────────────────────────────────────────
+    private TaskItem? tareaAEliminar = null;
+
+    // ── Ciclo de vida ────────────────────────────────────────────────────
+    protected override void OnInitialized()
+    {
+        if (!AuthService.IsAuthenticated)
+            Navigation.NavigateTo("/");
+    }
+
+    // ── Abrir formulario NUEVA tarea ─────────────────────────────────────
+    private void AbrirFormularioNuevo()
+    {
+        tareaEditando = null;
+        titulo = string.Empty;
+        descripcion = string.Empty;
+        fechaLimite = DateTime.Today;
+        prioridad = TaskPriority.Medium;
+        categoria = TaskCategory.Work;
+        errorTarea = string.Empty;
+        mostrarFormulario = true;
+        agregarRecordatorio = false;
+        recordatorioFecha = DateTime.Today;
+        recordatorioHora = new TimeOnly(8, 0);
+        recordatorioTipo = NotifType.Email;
+        recordatorioFrecuencia = ReminderFreq.Once;
+        horaLimite = new TimeOnly(9, 0, 0);
+    }
+
+    // ── Abrir formulario EDITAR tarea ────────────────────────────────────
+    private void AbrirFormularioEditar(TaskItem task)
+    {
+        tareaEditando = task;
+        titulo = task.Title;
+        descripcion = task.Description;
+        fechaLimite = task.DueDate;
+        prioridad = task.Priority;
+        categoria = task.Category;
+        errorTarea = string.Empty;
+        mostrarFormulario = true;
+        var rem = ReminderService.GetByTask(task.Id);
+        agregarRecordatorio = rem != null;
+        recordatorioFecha = rem != null ? rem.SendDate.ToDateTime(TimeOnly.MinValue) : DateTime.Today;
+        recordatorioHora = rem?.SendHour ?? new TimeOnly(8, 0);
+        recordatorioTipo = rem?.TypeNotf ?? NotifType.Email;
+        recordatorioFrecuencia = rem?.Frequency ?? ReminderFreq.Once;
+        horaLimite = task.LimitHour ?? new TimeOnly(9, 0);
+    }
+
+    // ── Recordatorio ─────────────────────────────────────────────────────
+    private bool agregarRecordatorio = false;
+    private DateTime recordatorioFecha = DateTime.Today;
+    private TimeOnly recordatorioHora = new TimeOnly(8, 0);
+    private NotifType recordatorioTipo = NotifType.Email;
+    private ReminderFreq recordatorioFrecuencia = ReminderFreq.Once;
+
+    // ── Cerrar formulario ────────────────────────────────────────────────
+    private void CerrarFormulario()
+    {
+        mostrarFormulario = false;
+        tareaEditando = null;
+        errorTarea = string.Empty;
+    }
+
+    // ── Guardar (crear o editar) ─────────────────────────────────────────
+    private void GuardarTarea()
+    {
+        errorTarea = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(titulo))
+        {
+            errorTarea = "El título es obligatorio.";
+            return;
+        }
+        if (fechaLimite.Date < DateTime.Today)
+        {
+            errorTarea = "La fecha límite no puede ser una fecha pasada.";
+            return;
+        }
+
+        if (tareaEditando != null)
+        {
+            tareaEditando.Title = titulo.Trim();
+            tareaEditando.Description = descripcion.Trim();
+            tareaEditando.DueDate = fechaLimite;
+            tareaEditando.Priority = prioridad;
+            tareaEditando.Category = categoria;
+            tareaEditando.LimitHour = horaLimite;
+            TaskService.Update(tareaEditando);
+
+            if (agregarRecordatorio)
+                ReminderService.Save(new Reminder
+                {
+                    IdTask = tareaEditando.Id,
+                    SendDate = DateOnly.FromDateTime(recordatorioFecha),
+                    SendHour = recordatorioHora,
+                    TypeNotf = recordatorioTipo,
+                    Frequency = recordatorioFrecuencia,
+                    State = ReminderStatus.Pending
+                });
+            else
+                ReminderService.DeleteByTask(tareaEditando.Id);
+
+            CerrarFormulario();
+            StateHasChanged();
+        }
+        else
+        {
+            try
+            {
+                var nuevaTarea = new TaskItem
+                {
+                    Title = titulo,
+                    Description = descripcion,
+                    DueDate = fechaLimite,
+                    Priority = prioridad,
+                    Category = categoria,
+                    UserId = AuthService.CurrentUser?.Id ?? 0,
+                    LimitHour = horaLimite
+                };
+
+                var creada = TaskService.Add(nuevaTarea);
+
+                if (agregarRecordatorio)
+                    ReminderService.Save(new Reminder
+                    {
+                        IdTask = creada.Id,
+                        SendDate = DateOnly.FromDateTime(recordatorioFecha),
+                        SendHour = recordatorioHora,
+                        TypeNotf = recordatorioTipo,
+                        Frequency = recordatorioFrecuencia,
+                        State = ReminderStatus.Pending
+                    });
+
+                CerrarFormulario();
+                StateHasChanged();
+            }
+            catch (ArgumentException ex)
+            {
+                errorTarea = ex.Message;
+            }
+        }
+    }
+
+    // ── Marcar completada / pendiente ────────────────────────────────────
+    private void ToggleTask(int id) => TaskService.ToggleDone(id);
+
+    // ── Eliminar con confirmación ────────────────────────────────────────
+    private void PedirConfirmacionEliminar(TaskItem task) => tareaAEliminar = task;
+    private void CancelarEliminar() => tareaAEliminar = null;
+    private void ConfirmarEliminar()
+    {
+        if (tareaAEliminar != null)
+        {
+            TaskService.Delete(tareaAEliminar.Id);
+            tareaAEliminar = null;
+        }
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────
+    private string GetPriorityColor(TaskPriority p) => p switch
+    {
+        TaskPriority.High => "#ff5f57",
+        TaskPriority.Medium => "#ffb340",
+        _ => "#3dd9c2"
+    };
+
+    private string GetCategoryClass(TaskCategory c) => c switch
+    {
+        TaskCategory.Work => "tag-work",
+        TaskCategory.Study => "tag-study",
+        TaskCategory.Home => "tag-home",
+        TaskCategory.Health => "tag-health",
+        _ => ""
+    };
+
+    private string GetCategoryName(TaskCategory c) => c switch
+    {
+        TaskCategory.Work => "Trabajo",
+        TaskCategory.Study => "Estudio",
+        TaskCategory.Home => "Hogar",
+        TaskCategory.Health => "Salud",
+        _ => ""
+    };
+
+    private string GetRelativeDate(DateTime d)
+    {
+        var diff = (d.Date - DateTime.Today).Days;
+        return diff switch
+        {
+            0 => "Hoy",
+            1 => "Mañana",
+            -1 => "Ayer",
+            _ => d.ToString("ddd, d MMM", new System.Globalization.CultureInfo("es-CO"))
+        };
+    }
+
+    private List<(int Day, string Classes)> GetCalendarDays()
+    {
+        var result = new List<(int, string)>();
+        var today = DateTime.Today;
+        var first = new DateTime(today.Year, today.Month, 1);
+        var daysInM = DateTime.DaysInMonth(today.Year, today.Month);
+        var taskDays = TaskService.GetByUser(AuthService.CurrentUser?.Id ?? 0)
+            .Where(t => t.DueDate.Month == today.Month && t.DueDate.Year == today.Year)
+            .Select(t => t.DueDate.Day).ToHashSet();
+
+        int startDow = ((int)first.DayOfWeek + 6) % 7;
+        for (int i = 0; i < startDow; i++)
+            result.Add((0, "cal-day other"));
+
+        for (int d = 1; d <= daysInM; d++)
+        {
+            var cls = "cal-day";
+            if (d == today.Day) cls += " today";
+            if (d == selectedDay && d != today.Day) cls += " selected";
+            if (taskDays.Contains(d) && d != today.Day) cls += " has-task";
+            result.Add((d, cls));
+        }
+        return result;
+    }
+}

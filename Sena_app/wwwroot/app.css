@@ -1,0 +1,30 @@
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --sidebar: #3949ab;
+    --sidebar-dark: #283593;
+    --accent: #3949ab;
+    --accent-hover: #283593;
+    --green: #26a69a;
+    --yellow: #f9a825;
+    --border: #e0e4ec;
+    --text: #2d3142;
+    --muted: #8a92a9;
+    --error: #e53935;
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}

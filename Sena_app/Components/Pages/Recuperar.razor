@@ -1,0 +1,166 @@
+﻿@page "/recuperar"
+@using Sena_app.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Recuperar contraseña</PageTitle>
+
+<div class="recuperar-layout">
+
+    <!-- Panel izquierdo decorativo -->
+    <aside class="side-panel">
+        <a href="/" class="brand">
+            <span class="brand-icon">
+                <svg fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M9 2h6a1 1 0 011 1v1H8V3a1 1 0 011-1z" />
+                    <path d="M5 4h14a2 2 0 012 2v13a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" />
+                    <path d="M9 12h6M9 16h4" />
+                </svg>
+            </span>
+            <span>GESTOR DE TAREAS</span>
+        </a>
+
+        <div class="side-content">
+            <h2>¿Olvidaste tu contraseña?</h2>
+            <p>No te preocupes. Ingresa tu correo y te ayudamos a recuperar el acceso a tu cuenta.</p>
+        </div>
+
+        <ul class="features-list">
+            <li>Proceso rápido y seguro</li>
+            <li>Sin perder tus tareas</li>
+            <li>Acceso inmediato al recuperar</li>
+        </ul>
+    </aside>
+
+    <!-- Panel derecho con formulario -->
+    <main class="form-panel">
+        <div class="form-card">
+
+            <div class="form-header">
+                <h1>@(emailFound ? "Nueva contraseña" : "Recuperar acceso")</h1>
+                <p>@(emailFound ? "Escribe tu nueva contraseña a continuación." : "Ingresa el correo asociado a tu cuenta.")</p>
+            </div>
+
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <div class="@(emailFound ? "success-msg" : "error-msg")">
+                    @message
+                </div>
+            }
+
+            @if (!emailFound)
+            {
+                <!-- Paso 1: buscar por correo -->
+                <div class="field">
+                    <label>Correo electrónico</label>
+                    <div class="input-wrap">
+                        <input type="email"
+                               placeholder="tú@correo.com"
+                               @bind="email"
+                               @bind:event="oninput"
+                               autocomplete="email" />
+                        <svg fill="none" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                        </svg>
+                    </div>
+                </div>
+
+                <button class="btn-primary" @onclick="BuscarUsuario">
+                    Buscar cuenta
+                </button>
+            }
+            else
+            {
+                <!-- Paso 2: ingresar nueva contraseña -->
+                <div class="field">
+                    <label>Nueva contraseña</label>
+                    <div class="input-wrap">
+                        <input type="password"
+                               placeholder="••••••••"
+                               @bind="newPassword"
+                               @bind:event="oninput" />
+                        <svg fill="none" stroke-width="1.8" viewBox="0 0 24 24">
+                            <rect x="3" y="11" width="18" height="11" rx="2" />
+                            <path d="M7 11V7a5 5 0 0110 0v4" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Confirmar contraseña</label>
+                    <div class="input-wrap">
+                        <input type="password"
+                               placeholder="••••••••"
+                               @bind="confirmPassword"
+                               @bind:event="oninput" />
+                        <svg fill="none" stroke-width="1.8" viewBox="0 0 24 24">
+                            <rect x="3" y="11" width="18" height="11" rx="2" />
+                            <path d="M7 11V7a5 5 0 0110 0v4" />
+                        </svg>
+                    </div>
+                </div>
+
+                <button class="btn-primary" @onclick="CambiarPassword">
+                    Guardar contraseña
+                </button>
+            }
+
+            <div class="back-link">
+                <a href="/">← Volver al inicio de sesión</a>
+            </div>
+
+        </div>
+    </main>
+
+</div>
+
+@code {
+    private string email = string.Empty;
+    private string newPassword = string.Empty;
+    private string confirmPassword = string.Empty;
+    private bool emailFound = false;
+    private string message = string.Empty;
+
+    private void BuscarUsuario()
+    {
+        message = string.Empty;
+        var user = AuthService.FindUserByEmail(email);
+
+        if (user == null)
+        {
+            message = "No existe un usuario con ese correo.";
+            return;
+        }
+
+        emailFound = true;
+        message = "Usuario encontrado. Ingresa tu nueva contraseña.";
+    }
+
+    private void CambiarPassword()
+    {
+        message = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(newPassword))
+        {
+            message = "La contraseña no puede estar vacía.";
+            return;
+        }
+
+        if (newPassword != confirmPassword)
+        {
+            message = "Las contraseñas no coinciden.";
+            return;
+        }
+
+        var ok = AuthService.UpdatePassword(email, newPassword);
+
+        if (!ok)
+        {
+            message = "No fue posible actualizar la contraseña.";
+            return;
+        }
+
+        Navigation.NavigateTo("/");
+    }
+}

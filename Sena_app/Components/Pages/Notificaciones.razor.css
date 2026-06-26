@@ -1,0 +1,134 @@
+/* ── Topbar ── */
+.page-topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+.page-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 26px; font-weight: 800;
+    color: #2d3142; margin: 0;
+}
+.page-sub { font-size: 13px; color: #8a92a9; margin: 4px 0 0; }
+
+.alert-chip {
+    background: rgba(229,57,53,.08);
+    border: 1px solid rgba(229,57,53,.2);
+    color: #e53935;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+    align-self: center;
+}
+
+/* ── Sección de notificaciones ── */
+.notif-section {
+    background: #fff;
+    border: 1px solid #e0e4ec;
+    border-radius: 12px;
+    overflow: visible;
+    margin-bottom: 20px;
+}
+
+.notif-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f2f7;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 12px 12px 0 0;
+}
+
+.overdue-header  { background: rgba(229,57,53,.04); color: #c62828; }
+.today-header    { background: rgba(249,168,37,.04); color: #c17f00; }
+.proximas-header { background: rgba(38,166,154,.04); color: #1b7a72; }
+
+.section-icon { font-size: 16px; }
+.section-label { flex: 1; }
+.section-count {
+    background: rgba(0,0,0,.06);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+}
+
+/* ── Lista ── */
+.notif-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.notif-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f2f7;
+    transition: background 0.12s;
+}
+.notif-card:last-child { border-bottom: none; }
+.notif-card:hover { background: #fafbfc; }
+
+.notif-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 4px;
+}
+
+.overdue-dot  { background: #e53935; }
+.today-dot    { background: #f9a825; }
+.proximas-dot { background: #26a69a; }
+
+.notif-body { flex: 1; min-width: 0; }
+
+.notif-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #2d3142;
+    margin-bottom: 6px;
+}
+
+.notif-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.notif-date { font-size: 11px; }
+.overdue-date  { color: #e53935; font-weight: 600; }
+.today-date    { color: #c17f00; font-weight: 600; }
+.proximas-date { color: #26a69a; }
+
+/* ── Tags ── */
+.tag {
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+.tag-work   { background: rgba(57,73,171,.1);  color: #3949ab; }
+.tag-study  { background: rgba(249,168,37,.1); color: #c17f00; }
+.tag-home   { background: rgba(38,166,154,.1); color: #26a69a; }
+.tag-health { background: rgba(229,57,53,.1);  color: #e53935; }
+
+/* ── Empty state ── */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px;
+    color: #8a92a9;
+    font-size: 13px;
+    gap: 6px;
+}
+.empty-icon { font-size: 28px; }
+.empty-state p { margin: 0; }

@@ -1,0 +1,68 @@
+﻿.notif-popup {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    background: #fff;
+    border: 1px solid #e0e4ec;
+    border-left: 4px solid #3949ab;
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 280px;
+    max-width: 360px;
+    box-shadow: 0 8px 32px rgba(57,73,171,.18);
+    z-index: 9999;
+    animation: slideIn 0.3s ease;
+}
+
+@@keyframes slideIn {
+    from {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notif-popup-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.notif-popup-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.notif-popup-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #2d3142;
+    margin-bottom: 3px;
+}
+
+.notif-popup-msg {
+    font-size: 12px;
+    color: #8a92a9;
+    line-height: 1.4;
+}
+
+.notif-popup-close {
+    background: none;
+    border: none;
+    color: #8a92a9;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+    .notif-popup-close:hover {
+        color: #2d3142;
+    }

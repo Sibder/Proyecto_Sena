@@ -1,0 +1,33 @@
+﻿/* ============================================================
+   Taskly — Variables CSS globales
+   Paleta de colores basada en el diseño de tu compañera
+   ============================================================ */
+
+:root {
+    /* ── Colores principales ── */
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --sidebar: #3949ab;
+    --sidebar-dark: #283593;
+    --accent: #3949ab;
+    --accent-hover: #283593;
+    --green: #26a69a;
+    --yellow: #f9a825;
+    --border: #e0e4ec;
+    --text: #2d3142;
+    --muted: #8a92a9;
+    --error: #e53935;
+    /* ── Tipografías ── */
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    /* ── Espaciados ── */
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-xs: 6px;
+    /* ── Sombras ── */
+    --shadow-sm: 0 2px 8px rgba(57, 73, 171, 0.10);
+    --shadow-md: 0 4px 14px rgba(57, 73, 171, 0.18);
+    --shadow-lg: 0 6px 24px rgba(57, 73, 171, 0.22);
+    /* ── Transiciones ── */
+    --transition: all 0.2s ease;
+}

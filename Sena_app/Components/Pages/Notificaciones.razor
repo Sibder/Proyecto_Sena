@@ -1,0 +1,152 @@
+@page "/notificaciones"
+@layout AppLayout
+@using Sena_app.Models
+@using Sena_app.Services
+@using Sena_app.Components.Layout
+
+@inject TaskService TaskService
+@inject AuthService AuthService
+
+<PageTitle>Notificaciones — Gestor de Tareas</PageTitle>
+
+<!-- Topbar -->
+<div class="page-topbar">
+    <div>
+        <h1 class="page-title">Notificaciones</h1>
+        <p class="page-sub">Alertas y recordatorios de tus tareas</p>
+    </div>
+    @if (Vencidas.Any() || Hoy.Any())
+    {
+        <div class="alert-chip">
+            🔴 @(Vencidas.Count() + Hoy.Count()) alertas activas
+        </div>
+    }
+</div>
+
+<!-- ── Vencidas ── -->
+<div class="notif-section">
+    <div class="notif-section-header overdue-header">
+        <span class="section-icon">🔴</span>
+        <span class="section-label">Tareas vencidas</span>
+        <span class="section-count">@Vencidas.Count()</span>
+    </div>
+
+    @if (!Vencidas.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon">🎉</div>
+            <p>¡Sin tareas vencidas! Todo al día.</p>
+        </div>
+    }
+    else
+    {
+        <div class="notif-list">
+            @foreach (var t in Vencidas)
+            {
+                <div class="notif-card overdue">
+                    <div class="notif-dot overdue-dot"></div>
+                    <div class="notif-body">
+                        <div class="notif-title">@t.Title</div>
+                        <div class="notif-meta">
+                            <span class="tag tag-@t.Category.ToString().ToLower()">@t.Category</span>
+                            <span class="notif-date overdue-date">
+                                ⚠️ Venció el @t.DueDate.ToString("dd/MM/yyyy")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- ── Para Hoy ── -->
+<div class="notif-section">
+    <div class="notif-section-header today-header">
+        <span class="section-icon">🟡</span>
+        <span class="section-label">Para hoy</span>
+        <span class="section-count">@Hoy.Count()</span>
+    </div>
+
+    @if (!Hoy.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon">☀️</div>
+            <p>No hay tareas programadas para hoy.</p>
+        </div>
+    }
+    else
+    {
+        <div class="notif-list">
+            @foreach (var t in Hoy)
+            {
+                <div class="notif-card today">
+                    <div class="notif-dot today-dot"></div>
+                    <div class="notif-body">
+                        <div class="notif-title">@t.Title</div>
+                        <div class="notif-meta">
+                            <span class="tag tag-@t.Category.ToString().ToLower()">@t.Category</span>
+                            <span class="notif-date today-date">📅 Vence hoy</span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- ── Próximas 3 días ── -->
+<div class="notif-section">
+    <div class="notif-section-header proximas-header">
+        <span class="section-icon">🟢</span>
+        <span class="section-label">Próximas (3 días)</span>
+        <span class="section-count">@Proximas.Count()</span>
+    </div>
+
+    @if (!Proximas.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <p>No hay tareas en los próximos 3 días.</p>
+        </div>
+    }
+    else
+    {
+        <div class="notif-list">
+            @foreach (var t in Proximas)
+            {
+                var diasRestantes = (t.DueDate.Date - DateTime.Today).Days;
+                <div class="notif-card proximas">
+                    <div class="notif-dot proximas-dot"></div>
+                    <div class="notif-body">
+                        <div class="notif-title">@t.Title</div>
+                        <div class="notif-meta">
+                            <span class="tag tag-@t.Category.ToString().ToLower()">@t.Category</span>
+                            <span class="notif-date proximas-date">
+                                ⏰ En @diasRestantes día@(diasRestantes == 1 ? "" : "s")
+                                (@t.DueDate.ToString("dd/MM/yyyy"))
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    List<TaskItem> Tareas =>
+        TaskService.GetByUser(AuthService.CurrentUser?.Id ?? 0);
+
+    IEnumerable<TaskItem> Vencidas =>
+        Tareas.Where(t => t.IsOverdue);
+
+    IEnumerable<TaskItem> Hoy =>
+        Tareas.Where(t => t.IsDueToday);
+
+    IEnumerable<TaskItem> Proximas =>
+        Tareas.Where(t =>
+            !t.IsDone &&
+            t.DueDate.Date > DateTime.Today &&
+            t.DueDate.Date <= DateTime.Today.AddDays(3));
+}

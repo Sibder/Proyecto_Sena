@@ -1,0 +1,204 @@
+@page "/registro"
+@layout AuthLayout
+@using Sena_app.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Crear cuenta — Taskly</PageTitle>
+
+<div class="registro-layout">
+    <aside class="side-panel">
+        <a href="/" class="brand">
+            <span class="brand-icon">
+                <svg fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M9 2h6a1 1 0 011 1v1H8V3a1 1 0 011-1z" />
+                    <path d="M5 4h14a2 2 0 012 2v13a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" />
+                    <path d="M9 12h6M9 16h4" />
+                </svg>
+            </span>
+            <span>GESTOR DE TAREAS</span>
+        </a>
+
+        <div class="steps">
+            <div class="step @(currentStep >= 1 ? (currentStep > 1 ? "done" : "active") : "")">
+                <div class="step-num">@(currentStep > 1 ? "✓" : "1")</div>
+                <div class="step-info"><h3>Crea tu cuenta</h3><p>Ingresa tus datos básicos.</p></div>
+            </div>
+            <div class="step @(currentStep >= 2 ? "active" : "")">
+                <div class="step-num">2</div>
+                <div class="step-info"><h3>Verifica tu correo</h3><p>Te enviamos un enlace de confirmación.</p></div>
+            </div>
+            <div class="step @(currentStep >= 3 ? "active" : "")">
+                <div class="step-num">3</div>
+                <div class="step-info"><h3>Personaliza tu perfil</h3><p>Añade foto y preferencias.</p></div>
+            </div>
+        </div>
+
+        <div class="side-footer">¿Ya tienes cuenta? <a href="/">Inicia sesión</a></div>
+    </aside>
+
+    <main class="form-panel">
+        <div class="form-card">
+            <div class="form-header">
+                <h1>Crea tu cuenta</h1>
+                <p>¿Ya tienes cuenta? <a href="/">Inicia sesión</a></p>
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMsg))
+            {
+                <div class="error-msg">@errorMsg</div>
+            }
+
+            <div class="row-2">
+                <div class="field">
+                    <label>Nombre</label>
+                    <div class="input-wrap">
+                        <input type="text" placeholder="Tu nombre" @bind="firstName" @bind:event="oninput" />
+                        <svg fill="none" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Apellido</label>
+                    <div class="input-wrap">
+                        <input type="text" placeholder="Tu apellido" @bind="lastName" @bind:event="oninput" />
+                        <svg fill="none" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Correo electrónico</label>
+                <div class="input-wrap">
+                    <input type="email" placeholder="tú@correo.com" @bind="email" @bind:event="oninput" autocomplete="email" />
+                    <svg fill="none" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Contraseña</label>
+                <div class="input-wrap">
+                    <input type="password" placeholder="Mínimo 8 caracteres" @oninput="HandlePasswordInput" autocomplete="new-password" />
+                    <svg fill="none" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
+                </div>
+                <div class="strength-bar"><div class="strength-fill" style="width:@strengthWidth%;background:@strengthColor"></div></div>
+                <span class="hint" style="color:@strengthColor">@strengthLabel</span>
+            </div>
+
+            <div class="field">
+                <label>Confirmar contraseña</label>
+                <div class="input-wrap">
+                    <input type="password" placeholder="Repite tu contraseña"
+                           @bind="confirmPassword" @bind:event="oninput"
+                           class="@(confirmPassword.Length > 0 ? (confirmPassword == password ? "valid" : "invalid") : "")" />
+                    <svg fill="none" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
+                </div>
+                @if (confirmPassword.Length > 0 && confirmPassword != password)
+                {
+                    <span class="hint error">Las contraseñas no coinciden</span>
+                }
+            </div>
+
+            <label class="terms">
+                <input type="checkbox" @bind="termsAccepted" />
+                Acepto los <a href="#">Términos de uso</a> y la <a href="#">Política de privacidad</a>
+            </label>
+
+            <button class="btn-primary" @onclick="HandleRegister">Crear cuenta gratis</button>
+
+            <div class="divider"><span>o regístrate con</span></div>
+
+            <button class="btn-social" type="button">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                </svg>
+                Continuar con Google
+            </button>
+        </div>
+    </main>
+</div>
+
+@code {
+    private string firstName = string.Empty;
+    private string lastName = string.Empty;
+    private string email = string.Empty;
+    private string password = string.Empty;
+    private string confirmPassword = string.Empty;
+    private bool termsAccepted = false;
+    private string errorMsg = string.Empty;
+    private int currentStep = 1;
+
+    // Fortaleza de contraseña
+    private int strengthWidth = 0;
+    private string strengthColor = "#e0e4ec";
+    private string strengthLabel = "Usa mayúsculas, números y símbolos";
+
+    protected override void OnInitialized()
+    {
+        if (AuthService.IsAuthenticated)
+            Navigation.NavigateTo("/home");
+    }
+
+    private void HandlePasswordInput(Microsoft.AspNetCore.Components.ChangeEventArgs e)
+    {
+        password = e.Value?.ToString() ?? string.Empty;
+        OnPasswordChanged();
+    }
+
+    private void OnPasswordChanged()
+    {
+        if (string.IsNullOrEmpty(password)) { strengthWidth = 0; return; }
+
+        int score = 0;
+        if (password.Length >= 8) score++;
+        if (System.Text.RegularExpressions.Regex.IsMatch(password, "[A-Z]")) score++;
+        if (System.Text.RegularExpressions.Regex.IsMatch(password, "[0-9]")) score++;
+        if (System.Text.RegularExpressions.Regex.IsMatch(password, "[^A-Za-z0-9]")) score++;
+        if (password.Length >= 12) score++;
+
+        (strengthWidth, strengthColor, strengthLabel) = score switch
+        {
+            1 => (20, "#e53935", "Muy débil"),
+            2 => (40, "#ff7043", "Débil"),
+            3 => (60, "#f9a825", "Moderada"),
+            4 => (80, "#26a69a", "Fuerte"),
+            _ => (100, "#2e7d32", "Muy fuerte")
+        };
+    }
+
+    private void HandleRegister()
+    {
+        errorMsg = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName) ||
+            string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            errorMsg = "Completa todos los campos.";
+            return;
+        }
+
+        if (password != confirmPassword)
+        {
+            errorMsg = "Las contraseñas no coinciden.";
+            return;
+        }
+
+        if (!termsAccepted)
+        {
+            errorMsg = "Debes aceptar los términos de uso.";
+            return;
+        }
+
+        bool ok = AuthService.Register(firstName, lastName, email, password);
+
+        if (!ok)
+        {
+            errorMsg = "Este correo ya está registrado.";
+            return;
+        }
+
+        Navigation.NavigateTo("/");
+    }
+}

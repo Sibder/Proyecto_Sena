@@ -1,0 +1,210 @@
+/* ── Topbar ── */
+.page-topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.page-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: #2d3142;
+    margin: 0;
+}
+
+.page-sub {
+    font-size: 13px;
+    color: #8a92a9;
+    margin: 4px 0 0;
+    text-transform: capitalize;
+}
+
+/* ── Navegación de mes ── */
+.cal-nav-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.cal-btn {
+    background: #fff;
+    border: 1px solid #e0e4ec;
+    color: #8a92a9;
+    border-radius: 8px;
+    width: 32px; height: 32px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.cal-btn:hover { color: #2d3142; border-color: #3949ab; }
+
+.cal-month-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #2d3142;
+    text-transform: capitalize;
+    min-width: 160px;
+    text-align: center;
+}
+
+/* ── Tarjeta principal ── */
+.cal-card {
+    background: #fff;
+    border: 1px solid #e0e4ec;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+/* ── Tabla ── */
+.cal-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.cal-table thead th {
+    padding: 10px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #8a92a9;
+    text-align: center;
+    background: #f4f6f9;
+    border-bottom: 1px solid #e0e4ec;
+}
+
+.cal-table thead th.weekend { color: #b18cff; }
+
+.cal-cell {
+    vertical-align: top;
+    height: 100px;
+    padding: 8px;
+    border: 1px solid #f0f2f7;
+    cursor: pointer;
+    transition: background 0.12s;
+    position: relative;
+}
+
+.cal-cell:hover { background: #f8f9fc; }
+
+.cal-cell.other-month { background: #fafbfc; }
+.cal-cell.other-month .cell-num { color: #c4c9d9; }
+
+.cal-cell.today { background: #eef0fb; }
+.cal-cell.today .cell-num {
+    background: #3949ab;
+    color: #fff;
+    border-radius: 50%;
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.cal-cell.selected { border: 2px solid #3949ab !important; }
+
+.cell-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #2d3142;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; height: 24px;
+    margin-bottom: 4px;
+}
+
+.cell-task {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cell-more {
+    font-size: 10px;
+    color: #8a92a9;
+    margin-top: 2px;
+}
+
+/* Colores por categoría */
+.cat-work   { background: rgba(57,73,171,.1);  color: #3949ab; }
+.cat-study  { background: rgba(249,168,37,.1); color: #c17f00; }
+.cat-home   { background: rgba(38,166,154,.1); color: #26a69a; }
+.cat-health { background: rgba(229,57,53,.1);  color: #e53935; }
+
+/* ── Detalle del día ── */
+.detail-card {
+    background: #fff;
+    border: 1px solid #e0e4ec;
+    border-radius: 12px;
+    padding: 20px 24px;
+}
+
+.detail-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #2d3142;
+    text-transform: capitalize;
+    margin-bottom: 16px;
+}
+
+.detail-empty { font-size: 13px; color: #8a92a9; }
+
+.detail-list {
+    list-style: none;
+    padding: 0; margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #f4f6f9;
+    border: 1px solid #e0e4ec;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.detail-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.detail-dot.cat-work   { background: #3949ab; }
+.detail-dot.cat-study  { background: #f9a825; }
+.detail-dot.cat-home   { background: #26a69a; }
+.detail-dot.cat-health { background: #e53935; }
+
+.detail-title { flex: 1; color: #2d3142; font-weight: 500; }
+
+.detail-cat {
+    font-size: 10px;
+    color: #8a92a9;
+    background: #e8eaf6;
+    padding: 2px 8px;
+    border-radius: 20px;
+}
+
+.detail-status { font-size: 11px; white-space: nowrap; }
+.detail-status.done    { color: #26a69a; }
+.detail-status.pending { color: #f9a825; }

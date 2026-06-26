@@ -1,0 +1,181 @@
+@page "/estadisticas"
+@layout AppLayout
+@using Sena_app.Models
+@using Sena_app.Services
+@using Sena_app.Components.Layout
+
+@inject TaskService TaskService
+@inject AuthService AuthService
+
+<PageTitle>Estadísticas — Gestor de Tareas</PageTitle>
+
+<!-- Topbar -->
+<div class="page-topbar">
+    <div>
+        <h1 class="page-title">Estadísticas</h1>
+        <p class="page-sub">Resumen de tu actividad</p>
+    </div>
+</div>
+
+<!-- Tarjetas resumen -->
+<div class="stats-row">
+    <div class="stat-card accent-blue">
+        <div class="stat-icon">📋</div>
+        <div class="stat-val">@total</div>
+        <div class="stat-lbl">Total de tareas</div>
+    </div>
+    <div class="stat-card accent-green">
+        <div class="stat-icon">✅</div>
+        <div class="stat-val">@completadas</div>
+        <div class="stat-lbl">Completadas</div>
+    </div>
+    <div class="stat-card accent-orange">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-val">@pendientes</div>
+        <div class="stat-lbl">Pendientes</div>
+    </div>
+    <div class="stat-card accent-red">
+        <div class="stat-icon">🔴</div>
+        <div class="stat-val">@vencidas</div>
+        <div class="stat-lbl">Vencidas</div>
+    </div>
+</div>
+
+<!-- Barra de progreso general -->
+<div class="progress-card">
+    <div class="progress-header">
+        <span class="progress-title">Progreso general</span>
+        <span class="progress-pct">@PorcentajeCompletadas%</span>
+    </div>
+    <div class="progress-track">
+        <div class="progress-fill" style="width:@($"{PorcentajeCompletadas}%")"></div>
+    </div>
+    <div class="progress-footer">
+        <span>@completadas completadas</span>
+        <span>@pendientes pendientes</span>
+    </div>
+</div>
+
+<!-- Desglose por categoría -->
+<div class="section-title">Desglose por categoría</div>
+<div class="cat-grid">
+    @foreach (var cat in Enum.GetValues<TaskCategory>())
+    {
+        var count  = TareasPorCategoria(cat);
+        var pct    = total == 0 ? 0 : (int)((double)count / total * 100);
+        var (icon, label, cls) = CatInfo(cat);
+
+        <div class="cat-card">
+            <div class="cat-top">
+                <span class="cat-icon">@icon</span>
+                <span class="cat-label @cls">@label</span>
+            </div>
+            <div class="cat-val">@count</div>
+            <div class="cat-track">
+                <div class="cat-fill @cls" style="width:@($"{pct}%")"></div>
+            </div>
+            <div class="cat-pct">@pct%</div>
+        </div>
+    }
+</div>
+
+<!-- Tabla con filtro -->
+<div class="section-title" style="margin-top:28px;">
+    Listado de tareas
+    <select class="filter-select" value="@categoriaSeleccionada"
+            @onchange="CambiarFiltro">
+        <option value="">Todas las categorías</option>
+        @foreach (var c in Enum.GetValues<TaskCategory>())
+        {
+            <option value="@c">@c</option>
+        }
+    </select>
+</div>
+
+<div class="table-card">
+    <table class="task-table">
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Categoría</th>
+                <th>Prioridad</th>
+                <th>Estado</th>
+                <th>Fecha límite</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!tareasFiltradas.Any())
+            {
+                <tr>
+                    <td colspan="5" style="text-align:center;color:#8a92a9;padding:24px;">
+                        Sin tareas para esta categoría.
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var tarea in tareasFiltradas)
+                {
+                    <tr class="@(tarea.IsOverdue ? "row-overdue" : "")">
+                        <td>@tarea.Title</td>
+                        <td><span class="tag tag-@tarea.Category.ToString().ToLower()">@tarea.Category</span></td>
+                        <td><span class="priority-dot p-@tarea.Priority.ToString().ToLower()"></span> @tarea.Priority</td>
+                        <td>
+                            <span class="status-badge @(tarea.IsDone ? "s-done" : "s-pending")">
+                                @(tarea.IsDone ? "✔ Completada" : "⏳ Pendiente")
+                            </span>
+                        </td>
+                        <td class="@(tarea.IsOverdue ? "date-overdue" : "")">
+                            @tarea.DueDate.ToShortDateString()
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    string categoriaSeleccionada = "";
+
+    // Lista materializada — se recalcula solo cuando cambia el filtro
+    List<TaskItem> tareasFiltradas = new();
+
+    int total       => TaskService.CountTotal(AuthService.CurrentUser?.Id ?? 0);
+    int completadas => TaskService.CountDone(AuthService.CurrentUser?.Id ?? 0);
+    int pendientes  => TaskService.CountPending(AuthService.CurrentUser?.Id ?? 0);
+    int vencidas    => TaskService.GetByUser(AuthService.CurrentUser?.Id ?? 0).Count(t => t.IsOverdue);
+
+    int PorcentajeCompletadas =>
+        total == 0 ? 0 : (int)((double)completadas / total * 100);
+
+    int TareasPorCategoria(TaskCategory cat) =>
+        TaskService.GetByUser(AuthService.CurrentUser?.Id ?? 0).Count(t => t.Category == cat);
+
+    protected override void OnInitialized() => AplicarFiltro();
+
+    void CambiarFiltro(ChangeEventArgs e)
+    {
+        categoriaSeleccionada = e.Value?.ToString() ?? string.Empty;
+        AplicarFiltro();
+    }
+
+    void AplicarFiltro()
+    {
+        var todas = TaskService.GetByUser(AuthService.CurrentUser?.Id ?? 0);
+        if (!string.IsNullOrWhiteSpace(categoriaSeleccionada) &&
+            Enum.TryParse<TaskCategory>(categoriaSeleccionada, out var cat))
+            tareasFiltradas = todas.Where(x => x.Category == cat).ToList();
+        else
+            tareasFiltradas = todas;
+    }
+
+    (string icon, string label, string cls) CatInfo(TaskCategory cat) => cat switch
+    {
+        TaskCategory.Work   => ("💼", "Trabajo",  "cat-work"),
+        TaskCategory.Study  => ("📚", "Estudio",  "cat-study"),
+        TaskCategory.Home   => ("🏠", "Hogar",    "cat-home"),
+        TaskCategory.Health => ("❤️", "Salud",    "cat-health"),
+        _                   => ("", cat.ToString(), "")
+    };
+}

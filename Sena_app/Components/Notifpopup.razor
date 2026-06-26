@@ -1,0 +1,60 @@
+﻿@using Sena_app.Services
+@inject ReminderService ReminderService
+@inject AuthService AuthService
+@implements IDisposable
+
+@if (mostrarPopup)
+{
+    <div class="notif-popup">
+        <div class="notif-popup-icon">⏰</div>
+        <div class="notif-popup-body">
+            <div class="notif-popup-title">@popupTitulo</div>
+            <div class="notif-popup-msg">@popupMensaje</div>
+        </div>
+        <button class="notif-popup-close" @onclick="CerrarPopup">✕</button>
+    </div>
+}
+
+@code {
+    bool mostrarPopup = false;
+    string popupTitulo = string.Empty;
+    string popupMensaje = string.Empty;
+    private Timer? _timer;
+
+    protected override void OnInitialized()
+    {
+        _timer = new Timer(async _ => await VerificarRecordatorios(),
+                           null,
+                           TimeSpan.FromSeconds(10),
+                           TimeSpan.FromSeconds(30));
+    }
+
+    private async Task VerificarRecordatorios()
+    {
+        if (!AuthService.IsAuthenticated || AuthService.CurrentUser is null)
+            return;
+
+        var pendientes = ReminderService.GetPendingByUser(AuthService.CurrentUser.Id);
+
+        foreach (var reminder in pendientes)
+        {
+            await InvokeAsync(async () =>
+            {
+                popupTitulo = "⏰ Recordatorio";
+                popupMensaje = $"{reminder.Task?.Title} — {reminder.SendDate:dd/MM/yyyy} {reminder.SendHour:HH\\:mm}";
+                mostrarPopup = true;
+                StateHasChanged();
+
+                await Task.Delay(6000);
+                mostrarPopup = false;
+                StateHasChanged();
+            });
+
+            ReminderService.MarkSent(reminder.Id);
+        }
+    }
+
+    private void CerrarPopup() => mostrarPopup = false;
+
+    public void Dispose() => _timer?.Dispose();
+}

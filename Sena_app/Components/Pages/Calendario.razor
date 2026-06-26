@@ -1,0 +1,167 @@
+@page "/calendario"
+@layout AppLayout
+@using Sena_app.Models
+@using Sena_app.Services
+@using Sena_app.Components.Layout
+
+@inject TaskService TaskService
+@inject AuthService AuthService
+
+<PageTitle>Calendario — Gestor de Tareas</PageTitle>
+
+<!-- Topbar -->
+<div class="page-topbar">
+    <div>
+        <h1 class="page-title">Calendario</h1>
+        <p class="page-sub">
+            @fechaActual.ToString("MMMM yyyy",
+                new System.Globalization.CultureInfo("es-CO"))
+        </p>
+    </div>
+</div>
+
+<!-- Navegación de mes -->
+<div class="cal-nav-bar">
+    <button class="cal-btn" @onclick="MesAnterior">&#9664;</button>
+    <span class="cal-month-label">
+        @fechaActual.ToString("MMMM yyyy",
+            new System.Globalization.CultureInfo("es-CO"))
+    </span>
+    <button class="cal-btn" @onclick="MesSiguiente">&#9654;</button>
+</div>
+
+<!-- Grilla -->
+<div class="cal-card">
+    <table class="cal-table">
+        <thead>
+            <tr>
+                <th>Lun</th><th>Mar</th><th>Mié</th>
+                <th>Jue</th><th>Vie</th>
+                <th class="weekend">Sáb</th><th class="weekend">Dom</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var semana in calendario)
+            {
+                <tr>
+                    @foreach (var dia in semana)
+                    {
+                        var tareasDia   = ObtenerTareas(dia);
+                        var esMesActual = dia.Month == fechaActual.Month;
+                        var esHoy       = dia.Date == DateTime.Today;
+                        var esSelec     = dia.Date == fechaSeleccionada.Date
+                                          && fechaSeleccionada != DateTime.MinValue;
+
+                        <td class="cal-cell @(esMesActual ? "" : "other-month")
+                                            @(esHoy       ? "today"    : "")
+                                            @(esSelec     ? "selected" : "")"
+                            @onclick="() => SeleccionarFecha(dia)">
+
+                            <span class="cell-num">@dia.Day</span>
+
+                            @if (esMesActual)
+                            {
+                                @foreach (var t in tareasDia.Take(2))
+                                {
+                                    <div class="cell-task @CatClass(t.Category)">
+                                        @t.Title
+                                    </div>
+                                }
+                                @if (tareasDia.Count > 2)
+                                {
+                                    <div class="cell-more">+@(tareasDia.Count - 2) más</div>
+                                }
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- Detalle del día seleccionado -->
+@if (fechaSeleccionada != DateTime.MinValue)
+{
+    <div class="detail-card">
+        <div class="detail-header">
+            <span class="detail-icon">📅</span>
+            <strong>@fechaSeleccionada.ToString("dddd d 'de' MMMM",
+                new System.Globalization.CultureInfo("es-CO"))</strong>
+        </div>
+
+        @{
+            var tareasDia = ObtenerTareas(fechaSeleccionada);
+        }
+
+        @if (!tareasDia.Any())
+        {
+            <p class="detail-empty">No hay tareas para este día.</p>
+        }
+        else
+        {
+            <ul class="detail-list">
+                @foreach (var t in tareasDia)
+                {
+                    <li class="detail-item">
+                        <span class="detail-dot @CatClass(t.Category)"></span>
+                        <span class="detail-title">@t.Title</span>
+                        <span class="detail-cat">@t.Category</span>
+                        <span class="detail-status @(t.IsDone ? "done" : "pending")">
+                            @(t.IsDone ? "✔ Completada" : "⏳ Pendiente")
+                        </span>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+}
+
+@code {
+    private DateTime fechaActual    = DateTime.Today;
+    private DateTime fechaSeleccionada;
+    private List<List<DateTime>> calendario = new();
+
+    protected override void OnInitialized() => ConstruirCalendario();
+
+    void MesAnterior()  { fechaActual = fechaActual.AddMonths(-1); ConstruirCalendario(); }
+    void MesSiguiente() { fechaActual = fechaActual.AddMonths(1);  ConstruirCalendario(); }
+
+    void SeleccionarFecha(DateTime fecha)
+    {
+        fechaSeleccionada = fecha.Date == fechaSeleccionada.Date
+                            ? DateTime.MinValue   // segundo clic deselecciona
+                            : fecha;
+    }
+
+    List<TaskItem> ObtenerTareas(DateTime fecha) =>
+        TaskService
+            .GetByUser(AuthService.CurrentUser?.Id ?? 0)
+            .Where(t => t.DueDate.Date == fecha.Date)
+            .ToList();
+
+    string CatClass(TaskCategory cat) => cat switch
+    {
+        TaskCategory.Work   => "cat-work",
+        TaskCategory.Study  => "cat-study",
+        TaskCategory.Home   => "cat-home",
+        TaskCategory.Health => "cat-health",
+        _                   => ""
+    };
+
+    void ConstruirCalendario()
+    {
+        calendario.Clear();
+        var primerDia = new DateTime(fechaActual.Year, fechaActual.Month, 1);
+        int offset    = ((int)primerDia.DayOfWeek + 6) % 7;
+        var inicio    = primerDia.AddDays(-offset);
+
+        for (int s = 0; s < 6; s++)
+        {
+            var semana = Enumerable.Range(0, 7)
+                .Select(d => inicio.AddDays(s * 7 + d))
+                .ToList();
+            calendario.Add(semana);
+        }
+    }
+}

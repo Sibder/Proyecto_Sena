@@ -1,0 +1,129 @@
+@inherits LayoutComponentBase
+@using Sena_app.Services
+@using Sena_app.Models
+@inject AuthService AuthService
+@inject TaskService TaskService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+@if (!AuthService.IsAuthenticated)
+{
+    if (sessionRestored)
+    {
+        Navigation.NavigateTo("/", replace: true);
+    }
+    return;
+}
+
+<div class="app-shell">
+
+    <!-- ═══════════ SIDEBAR ═══════════ -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <span class="dot"></span>
+            GESTOR DE TAREAS
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-label">General</div>
+
+            <div class="nav-item @(IsActive("/home") ? "active" : "")"
+                 @onclick='() => Navigation.NavigateTo("/home")'>
+                <span class="icon">▦</span> Panel de tareas
+                <span class="nav-badge">@TaskService.CountPending(AuthService.CurrentUser?.Id ?? 0)</span>
+            </div>
+
+            <div class="nav-item @(IsActive("/calendario") ? "active" : "")"
+                 @onclick='() => Navigation.NavigateTo("/calendario")'>
+                <span class="icon">◫</span> Calendario
+            </div>
+
+            <div class="nav-item @(IsActive("/estadisticas") ? "active" : "")"
+                 @onclick='() => Navigation.NavigateTo("/estadisticas")'>
+                <span class="icon">◎</span> Estadísticas
+            </div>
+
+            <div class="nav-item @(IsActive("/notificaciones") ? "active" : "")"
+                 @onclick='() => Navigation.NavigateTo("/notificaciones")'>
+                <span class="icon">◈</span> Notificaciones
+                @{
+                    var alertas = TaskService
+                        .GetByUser(AuthService.CurrentUser?.Id ?? 0)
+                        .Count(t => t.IsOverdue || t.IsDueToday);
+                }
+                @if (alertas > 0)
+                {
+                    <span class="nav-badge"
+                          style="background:rgba(255,95,87,.15);color:#ff5f57;border-color:rgba(255,95,87,.3);">
+                        @alertas
+                    </span>
+                }
+            </div>
+        </div>
+
+        <!-- Categorías -->
+        <div class="nav-section">
+            <div class="nav-label">Categorías</div>
+            <div class="nav-item">
+                <span class="cat-dot" style="background:#4ea8ff"></span> Trabajo
+                <span class="nav-badge">@(TaskService.GetByUser(AuthService.CurrentUser?.Id ?? 0).Count(t => t.Category == TaskCategory.Work))</span>
+            </div>
+            <div class="nav-item">
+                <span class="cat-dot" style="background:#b18cff"></span> Estudio
+                <span class="nav-badge">@(TaskService.GetByUser(AuthService.CurrentUser?.Id ?? 0).Count(t => t.Category == TaskCategory.Study))</span>
+            </div>
+            <div class="nav-item">
+                <span class="cat-dot" style="background:#3dd9c2"></span> Hogar
+                <span class="nav-badge">@(TaskService.GetByUser(AuthService.CurrentUser?.Id ?? 0).Count(t => t.Category == TaskCategory.Home))</span>
+            </div>
+            <div class="nav-item">
+                <span class="cat-dot" style="background:#ff5f57"></span> Salud
+                <span class="nav-badge">@(TaskService.GetByUser(AuthService.CurrentUser?.Id ?? 0).Count(t => t.Category == TaskCategory.Health))</span>
+            </div>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="nav-item" style="margin-bottom:8px;">
+                <span class="icon">⚙</span> Configuración
+            </div>
+            <div class="user-card" @onclick='() => Navigation.NavigateTo("/profile")'>
+                <div class="user-av">@AuthService.CurrentUser?.Initials</div>
+                <div class="user-info">
+                    <div class="user-name">@AuthService.CurrentUser?.FullName</div>
+                    <div class="user-plan">Plan @AuthService.CurrentUser?.Plan</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ═══════════ CONTENIDO DE LA PÁGINA ═══════════ -->
+    <main class="app-main">
+        @Body
+    </main>
+
+</div>
+
+<Notifpopup />
+
+@code {
+    private bool sessionRestored = false;
+
+    bool IsActive(string path) =>
+        Navigation.Uri.EndsWith(path, StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await AuthService.RestoreSessionAsync();
+            sessionRestored = true;
+
+            if (!AuthService.IsAuthenticated)
+                Navigation.NavigateTo("/", replace: true);
+            else
+                StateHasChanged();
+        }
+    }
+
+    public void Dispose() { }
+}
