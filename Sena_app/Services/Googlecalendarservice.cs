@@ -120,6 +120,8 @@ namespace Sena_app.Services
             var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
             if (user?.GoogleAccessToken is null) return null;
 
+            var flow = BuildFlow(new[] { CalendarService.Scope.Calendar });
+
             var token = new TokenResponse
             {
                 AccessToken = user.GoogleAccessToken,
@@ -128,8 +130,26 @@ namespace Sena_app.Services
                                    .GetValueOrDefault().TotalSeconds
             };
 
-            var flow = BuildFlow(new[] { CalendarService.Scope.Calendar });
             var credential = new UserCredential(flow, userId.ToString(), token);
+
+            // Si el token expiró, renovarlo automáticamente con el refresh token
+            if (user.GoogleTokenExpiry.HasValue && user.GoogleTokenExpiry.Value <= DateTime.UtcNow)
+            {
+                var newToken = await credential.RefreshTokenAsync(CancellationToken.None);
+                if (newToken)
+                {
+                    // Guardar el nuevo token en la BD
+                    using var dbUpdate = _factory.CreateDbContext();
+                    var userToUpdate = await dbUpdate.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                    if (userToUpdate != null)
+                    {
+                        userToUpdate.GoogleAccessToken = credential.Token.AccessToken;
+                        userToUpdate.GoogleTokenExpiry = credential.Token.IssuedUtc
+                            .AddSeconds(credential.Token.ExpiresInSeconds ?? 3600);
+                        await dbUpdate.SaveChangesAsync();
+                    }
+                }
+            }
 
             return new CalendarService(new BaseClientService.Initializer
             {
